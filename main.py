@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-jarvis-digest — Jarvis-style spoken news briefing.
+voice-news — local spoken news briefing.
 
 Usage:
   python main.py                  # full pipeline → WAV
@@ -42,7 +42,7 @@ def fetch_all_sources(cfg: dict) -> list[list[dict]]:
             reddit.fetch,
             rd_cfg.get("client_id", ""),
             rd_cfg.get("client_secret", ""),
-            rd_cfg.get("user_agent", "jarvis-digest/1.0"),
+            rd_cfg.get("user_agent", "voice-news/1.0"),
             rd_cfg.get("subreddits", []),
             rd_cfg.get("max_posts", 5),
         )] = "reddit"
@@ -78,7 +78,7 @@ def main():
         sys.exit(1)
 
     cfg = load_config(str(config_path))
-    output_dir = args.output_dir or cfg.get("output_dir", "~/jarvis-digests")
+    output_dir = args.output_dir or cfg.get("output_dir", "~/voice-news")
     max_total = cfg.get("max_stories_total", 20)
 
     # 1. Fetch

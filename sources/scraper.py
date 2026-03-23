@@ -6,7 +6,7 @@ from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 
 _SESSION = requests.Session()
-_SESSION.headers.update({"User-Agent": "Mozilla/5.0 (compatible; jarvis-digest/1.0)"})
+_SESSION.headers.update({"User-Agent": "Mozilla/5.0 (compatible; voice-news/1.0)"})
 
 # Feed-subdomain prefixes to strip when deriving a homepage URL
 _FEED_SUBDOMAINS = re.compile(r"^(feeds?|rss|atom)\.", re.I)

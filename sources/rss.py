@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from sources import scraper as _scraper
 
 _SESSION = requests.Session()
-_SESSION.headers.update({"User-Agent": "Mozilla/5.0 (compatible; jarvis-digest/1.0)"})
+_SESSION.headers.update({"User-Agent": "Mozilla/5.0 (compatible; voice-news/1.0)"})
 
 
 def _parse_date(entry) -> datetime | None:
