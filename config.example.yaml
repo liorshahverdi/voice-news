@@ -1,0 +1,74 @@
+# voice-news configuration
+# Copy this file to config.yaml and fill in your values.
+# config.yaml is gitignored — never commit credentials.
+
+# ── Local LLM (Ollama) ────────────────────────────────────────────────────────
+ollama:
+  model: llama3.2:3b          # any model pulled via `ollama pull <name>`
+  host: http://localhost:11434
+
+# ── Reddit (optional) ─────────────────────────────────────────────────────────
+# Leave client_id / client_secret blank to skip Reddit entirely.
+# Create an app at https://www.reddit.com/prefs/apps (type: script).
+reddit:
+  client_id: ""
+  client_secret: ""
+  user_agent: "voice-news/1.0"
+  subreddits: [worldnews, technology, science]
+  max_posts: 5
+
+# ── Hacker News ───────────────────────────────────────────────────────────────
+hackernews:
+  max_stories: 5
+
+# ── RSS feeds ─────────────────────────────────────────────────────────────────
+# Each entry requires `name`, `url`, and `max` (headlines to keep).
+# `homepage` is optional — used as a scraping fallback if the feed is empty.
+rss_feeds:
+  # International wire / broadcast
+  - { name: "BBC News",         url: "https://feeds.bbci.co.uk/news/rss.xml",                         max: 4, homepage: "https://www.bbc.co.uk/news" }
+  - { name: "Reuters",          url: "https://feeds.reuters.com/reuters/topNews",                      max: 3, homepage: "https://www.reuters.com" }
+  - { name: "AP News",          url: "https://feeds.apnews.com/apnews/topnews",                        max: 3, homepage: "https://www.apnews.com" }
+  - { name: "Al Jazeera",       url: "https://www.aljazeera.com/xml/rss/all.xml",                      max: 3 }
+  - { name: "Deutsche Welle",   url: "https://rss.dw.com/rdf/rss-en-all",                             max: 3, homepage: "https://www.dw.com/en" }
+  - { name: "France 24",        url: "https://www.france24.com/en/rss",                               max: 3 }
+  - { name: "Sky News",         url: "https://feeds.skynews.com/feeds/rss/home.xml",                  max: 3, homepage: "https://news.sky.com" }
+  - { name: "The Guardian",     url: "https://www.theguardian.com/world/rss",                         max: 3 }
+  # US broadcast / print
+  - { name: "NPR",              url: "https://feeds.npr.org/1001/rss.xml",                            max: 3, homepage: "https://www.npr.org/sections/news" }
+  - { name: "CNN",              url: "http://rss.cnn.com/rss/edition.rss",                            max: 3, homepage: "https://www.cnn.com" }
+  - { name: "ABC News",         url: "https://abcnews.go.com/abcnews/topstories",                     max: 3, homepage: "https://abcnews.go.com" }
+  - { name: "CBS News",         url: "https://www.cbsnews.com/latest/rss/main",                       max: 3 }
+  - { name: "NBC News",         url: "https://feeds.nbcnews.com/nbcnews/public/news",                 max: 3, homepage: "https://www.nbcnews.com" }
+  - { name: "New York Times",   url: "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",     max: 3, homepage: "https://www.nytimes.com" }
+  - { name: "Washington Post",  url: "https://feeds.washingtonpost.com/rss/world",                    max: 3, homepage: "https://www.washingtonpost.com" }
+  - { name: "Politico",         url: "https://www.politico.com/rss/politicopicks.xml",                max: 3 }
+  - { name: "The Atlantic",     url: "https://www.theatlantic.com/feed/all/",                         max: 2 }
+  # Business / finance
+  - { name: "CNBC",             url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",         max: 3 }
+  - { name: "Bloomberg",        url: "https://feeds.bloomberg.com/markets/news.rss",                  max: 3, homepage: "https://www.bloomberg.com" }
+  - { name: "Financial Times",  url: "https://www.ft.com/rss/home/uk",                               max: 2 }
+  - { name: "Forbes",           url: "https://www.forbes.com/most-popular/feed/",                    max: 2 }
+  # Tech
+  - { name: "Ars Technica",     url: "https://feeds.arstechnica.com/arstechnica/index",              max: 3, homepage: "https://arstechnica.com" }
+  - { name: "The Verge",        url: "https://www.theverge.com/rss/index.xml",                       max: 3 }
+  - { name: "Wired",            url: "https://www.wired.com/feed/rss",                               max: 3 }
+  - { name: "TechCrunch",       url: "https://techcrunch.com/feed/",                                 max: 3 }
+  - { name: "MIT Tech Review",  url: "https://www.technologyreview.com/feed/",                       max: 2 }
+  - { name: "Engadget",         url: "https://www.engadget.com/rss.xml",                             max: 2 }
+  - { name: "ZDNet",            url: "https://www.zdnet.com/news/rss.xml",                           max: 2 }
+  - { name: "VentureBeat",      url: "https://venturebeat.com/feed/",                               max: 2 }
+  # Science
+  - { name: "Science Daily",    url: "https://www.sciencedaily.com/rss/top/science.xml",             max: 2 }
+  - { name: "New Scientist",    url: "https://www.newscientist.com/feed/home/",                      max: 2 }
+  - { name: "NASA",             url: "https://www.nasa.gov/rss/dyn/breaking_news.rss",               max: 2, homepage: "https://www.nasa.gov/news" }
+
+# ── TTS ───────────────────────────────────────────────────────────────────────
+# Kokoro voice ID. Format: {lang_prefix}_{name}
+# Common options: bf_emma, bf_alice, am_michael, am_adam, af_sky
+tts:
+  voice: bf_emma
+
+# ── Output ────────────────────────────────────────────────────────────────────
+output_dir: ~/voice-news-output   # WAV files and article history saved here
+max_stories_total: 30             # cap on stories passed to the LLM

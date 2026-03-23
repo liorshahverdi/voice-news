@@ -1,0 +1,22 @@
+# Runtime output
+output/
+*.wav
+*.mp3
+
+# Article history (runtime state, not for version control)
+seen_articles.json
+
+# Config (may contain credentials — copy config.example.yaml instead)
+config.yaml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+
+# Virtual environments
+venv/
+.venv/
+env/
