@@ -52,10 +52,22 @@ jobs:
 
       - name: Set up virtual environment and install dependencies
         run: |
-          rm -rf "$VENV"
-          $PYTHON -m venv "$VENV"
-          "$VENV/bin/pip" install --upgrade pip
-          "$VENV/bin/pip" install -r requirements.txt
+          if [ ! -f "$VENV/bin/python3" ]; then
+            echo "Creating new virtual environment..."
+            rm -rf "$VENV"
+            $PYTHON -m venv "$VENV"
+          fi
+          REQS_HASH=$(md5 -q requirements.txt)
+          CACHED_HASH=""
+          [ -f "$VENV/.reqs_hash" ] && CACHED_HASH=$(cat "$VENV/.reqs_hash")
+          if [ "$REQS_HASH" != "$CACHED_HASH" ]; then
+            echo "Installing/updating dependencies..."
+            "$VENV/bin/pip" install --upgrade pip
+            "$VENV/bin/pip" install -r requirements.txt
+            echo "$REQS_HASH" > "$VENV/.reqs_hash"
+          else
+            echo "Dependencies up to date, skipping install."
+          fi
 
       - name: Run pipeline
         run: |
