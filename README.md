@@ -127,6 +127,14 @@ voice-news/
     └── scraper.py          # HTML headline scraper (RSS fallback)
 ```
 
+## Website
+
+A daily audio briefing is published automatically to GitHub Pages:
+
+**Live site:** `https://<owner>.github.io/voice-news/`
+
+The site features a click-to-play splash, animated visualizer, mute control, and full transcript. A GitHub Action runs daily at 7 AM PT on a self-hosted runner — see [`docs/self-hosted-runner.md`](docs/self-hosted-runner.md) for setup. You can also trigger a build manually from **Actions > Daily Voice News > Run workflow**.
+
 ## License
 
 MIT

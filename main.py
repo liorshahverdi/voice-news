@@ -119,6 +119,11 @@ def main():
     print(script)
     print("---------------------\n")
 
+    # Save transcript for the website
+    transcript_path = Path(output_dir) / "transcript.txt"
+    transcript_path.write_text(script)
+    print(f"[transcript] Saved to {transcript_path}")
+
     # Save seen URLs so these articles are skipped next run
     new_urls = [s["url"] for s in stories if s.get("url")]
     seen.save(output_dir, new_urls)

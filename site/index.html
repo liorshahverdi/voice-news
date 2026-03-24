@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice News</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Splash Screen -->
+  <div id="splash">
+    <h1>Voice News</h1>
+    <button id="start-btn">Click to Listen</button>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdown">
+    <span id="countdown-number"></span>
+  </div>
+
+  <!-- Main Content -->
+  <div id="main-content">
+    <div id="timestamp">Loading...</div>
+    <canvas id="visualizer"></canvas>
+    <button id="mute-btn">Mute</button>
+    <div id="transcript-box">Loading transcript...</div>
+  </div>
+
+  <audio id="audio" src="digest.mp3" preload="auto"></audio>
+
+  <script>
+    const splash = document.getElementById('splash');
+    const countdown = document.getElementById('countdown');
+    const countdownNum = document.getElementById('countdown-number');
+    const mainContent = document.getElementById('main-content');
+    const audio = document.getElementById('audio');
+    const muteBtn = document.getElementById('mute-btn');
+    const canvas = document.getElementById('visualizer');
+    const ctx = canvas.getContext('2d');
+
+    let audioCtx, analyser, dataArray;
+
+    // --- Splash & Countdown ---
+    document.getElementById('start-btn').addEventListener('click', () => {
+      splash.classList.add('hidden');
+      startCountdown();
+    });
+
+    function startCountdown() {
+      countdown.classList.add('active');
+      let count = 3;
+      countdownNum.textContent = count;
+      countdownNum.style.animation = 'none';
+      void countdownNum.offsetWidth;
+      countdownNum.style.animation = '';
+
+      const interval = setInterval(() => {
+        count--;
+        if (count > 0) {
+          countdownNum.textContent = count;
+          countdownNum.style.animation = 'none';
+          void countdownNum.offsetWidth;
+          countdownNum.style.animation = '';
+        } else {
+          clearInterval(interval);
+          countdown.classList.remove('active');
+          countdown.classList.add('hidden');
+          beginPlayback();
+        }
+      }, 900);
+    }
+
+    // --- Audio Engine ---
+    function beginPlayback() {
+      mainContent.classList.add('visible');
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioCtx.createMediaElementSource(audio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+
+      audio.play();
+      resizeCanvas();
+      drawVisualizer();
+    }
+
+    // --- Mute ---
+    muteBtn.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      muteBtn.textContent = audio.muted ? 'Unmute' : 'Mute';
+      muteBtn.classList.toggle('muted', audio.muted);
+    });
+
+    // --- Concentric Rings Visualizer ---
+    function resizeCanvas() {
+      const size = canvas.clientWidth * window.devicePixelRatio;
+      canvas.width = size;
+      canvas.height = size;
+    }
+
+    window.addEventListener('resize', () => {
+      if (audioCtx) resizeCanvas();
+    });
+
+    function drawVisualizer() {
+      requestAnimationFrame(drawVisualizer);
+      analyser.getByteFrequencyData(dataArray);
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Average amplitude
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+      const avg = sum / dataArray.length;
+
+      // Draw concentric rings
+      const ringCount = 8;
+      const maxRadius = Math.min(cx, cy) * 0.9;
+
+      for (let i = ringCount - 1; i >= 0; i--) {
+        const bandStart = Math.floor((i / ringCount) * dataArray.length);
+        const bandEnd = Math.floor(((i + 1) / ringCount) * dataArray.length);
+        let bandAvg = 0;
+        for (let j = bandStart; j < bandEnd; j++) bandAvg += dataArray[j];
+        bandAvg /= (bandEnd - bandStart);
+
+        const normalised = bandAvg / 255;
+        const baseRadius = ((i + 1) / ringCount) * maxRadius * 0.6;
+        const radius = baseRadius + normalised * maxRadius * 0.4;
+        const opacity = 0.15 + normalised * 0.6;
+        const lineWidth = 1.5 + normalised * 2;
+
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(108, 99, 255, ${opacity})`;
+        ctx.lineWidth = lineWidth;
+        ctx.stroke();
+      }
+
+      // Central dot
+      const dotRadius = 4 + (avg / 255) * 8;
+      ctx.beginPath();
+      ctx.arc(cx, cy, dotRadius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(108, 99, 255, ${0.6 + (avg / 255) * 0.4})`;
+      ctx.fill();
+    }
+
+    // --- Load Metadata ---
+    fetch('metadata.json')
+      .then(r => r.json())
+      .then(data => {
+        const date = new Date(data.generated_at);
+        const formatted = date.toLocaleDateString('en-US', {
+          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+        });
+        document.getElementById('timestamp').textContent = 'Last updated: ' + formatted;
+      })
+      .catch(() => {
+        document.getElementById('timestamp').textContent = 'Timestamp unavailable';
+      });
+
+    // --- Load Transcript ---
+    fetch('transcript.txt')
+      .then(r => r.text())
+      .then(text => {
+        document.getElementById('transcript-box').textContent = text;
+      })
+      .catch(() => {
+        document.getElementById('transcript-box').textContent = 'Transcript unavailable.';
+      });
+  </script>
+</body>
+</html>

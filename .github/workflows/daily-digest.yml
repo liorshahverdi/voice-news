@@ -1,0 +1,74 @@
+name: Daily Voice News
+
+on:
+  schedule:
+    - cron: '0 14 * * *'   # 7 AM Pacific (UTC-7)
+  workflow_dispatch:
+
+jobs:
+  generate-and-deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Restore seen_articles.json from gh-pages
+        run: |
+          git fetch origin gh-pages || true
+          git show origin/gh-pages:seen_articles.json > seen_articles_prev.json 2>/dev/null || echo '[]' > seen_articles_prev.json
+          mkdir -p /tmp/voice-news-build
+          cp seen_articles_prev.json /tmp/voice-news-build/seen_articles.json
+
+      - name: Check prerequisites
+        run: |
+          python3 --version
+          ollama --version
+          ffmpeg -version | head -1
+          echo "All prerequisites found."
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run pipeline
+        run: |
+          python3 main.py \
+            --config config.example.yaml \
+            --output-dir /tmp/voice-news-build \
+            --no-play
+
+      - name: Convert WAV to MP3
+        run: |
+          WAV_FILE=$(ls -t /tmp/voice-news-build/digest_*.wav | head -1)
+          echo "Converting $WAV_FILE"
+          ffmpeg -y -i "$WAV_FILE" -codec:a libmp3lame -b:a 128k /tmp/voice-news-build/digest.mp3
+
+      - name: Build deploy directory
+        run: |
+          DEPLOY_DIR=/tmp/voice-news-deploy
+          rm -rf "$DEPLOY_DIR"
+          mkdir -p "$DEPLOY_DIR"
+
+          # Site assets
+          cp site/index.html "$DEPLOY_DIR/"
+          cp site/style.css "$DEPLOY_DIR/"
+
+          # Generated content
+          cp /tmp/voice-news-build/digest.mp3 "$DEPLOY_DIR/"
+          cp /tmp/voice-news-build/transcript.txt "$DEPLOY_DIR/"
+          cp /tmp/voice-news-build/seen_articles.json "$DEPLOY_DIR/"
+
+          # Metadata with generation timestamp
+          echo "{\"generated_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$DEPLOY_DIR/metadata.json"
+
+          # Disable Jekyll processing
+          touch "$DEPLOY_DIR/.nojekyll"
+
+          echo "Deploy directory contents:"
+          ls -lh "$DEPLOY_DIR/"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: /tmp/voice-news-deploy
+          force_orphan: true
