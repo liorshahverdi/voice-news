@@ -14,7 +14,7 @@ jobs:
   generate:
     runs-on: self-hosted
     env:
-      PYTHON: /opt/homebrew/bin/python3
+      PYTHON: /opt/homebrew/bin/python3.12
       VENV: /tmp/voice-news-venv
     steps:
       - name: Checkout main
