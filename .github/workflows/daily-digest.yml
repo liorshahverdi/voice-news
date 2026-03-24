@@ -5,19 +5,39 @@ on:
     - cron: '0 14 * * *'   # 7 AM Pacific (UTC-7)
   workflow_dispatch:
 
+permissions:
+  pages: write
+  id-token: write
+  actions: read
+
 jobs:
-  generate-and-deploy:
+  generate:
     runs-on: self-hosted
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
 
-      - name: Restore seen_articles.json from gh-pages
+      - name: Restore seen_articles.json from previous artifact
         run: |
-          git fetch origin gh-pages || true
-          git show origin/gh-pages:seen_articles.json > seen_articles_prev.json 2>/dev/null || echo '[]' > seen_articles_prev.json
           mkdir -p /tmp/voice-news-build
-          cp seen_articles_prev.json /tmp/voice-news-build/seen_articles.json
+          # Try to download the latest seen_articles artifact via gh CLI
+          gh run list --workflow="Daily Voice News" --status=success --limit=1 --json databaseId --jq '.[0].databaseId' > /tmp/last_run_id.txt 2>/dev/null || true
+          LAST_RUN_ID=$(cat /tmp/last_run_id.txt)
+          if [ -n "$LAST_RUN_ID" ]; then
+            gh run download "$LAST_RUN_ID" -n seen-articles -D /tmp/seen-restore 2>/dev/null || true
+            if [ -f /tmp/seen-restore/seen_articles.json ]; then
+              cp /tmp/seen-restore/seen_articles.json /tmp/voice-news-build/seen_articles.json
+              echo "Restored seen_articles.json from run $LAST_RUN_ID"
+            else
+              echo '[]' > /tmp/voice-news-build/seen_articles.json
+              echo "No seen_articles artifact found, starting fresh"
+            fi
+          else
+            echo '[]' > /tmp/voice-news-build/seen_articles.json
+            echo "No previous successful run found, starting fresh"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check prerequisites
         run: |
@@ -55,20 +75,32 @@ jobs:
           # Generated content
           cp /tmp/voice-news-build/digest.mp3 "$DEPLOY_DIR/"
           cp /tmp/voice-news-build/transcript.txt "$DEPLOY_DIR/"
-          cp /tmp/voice-news-build/seen_articles.json "$DEPLOY_DIR/"
 
           # Metadata with generation timestamp
           echo "{\"generated_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > "$DEPLOY_DIR/metadata.json"
 
-          # Disable Jekyll processing
-          touch "$DEPLOY_DIR/.nojekyll"
-
           echo "Deploy directory contents:"
           ls -lh "$DEPLOY_DIR/"
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Upload pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: /tmp/voice-news-deploy
-          force_orphan: true
+          path: /tmp/voice-news-deploy
+
+      - name: Upload seen_articles for next run
+        uses: actions/upload-artifact@v4
+        with:
+          name: seen-articles
+          path: /tmp/voice-news-build/seen_articles.json
+          retention-days: 90
+
+  deploy:
+    needs: generate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
