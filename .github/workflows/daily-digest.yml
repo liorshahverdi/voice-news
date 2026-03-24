@@ -2,7 +2,7 @@ name: Daily Voice News
 
 on:
   schedule:
-    - cron: '0 14 * * *'   # 7 AM Pacific (UTC-7)
+    - cron: '0 16 * * *'   # 11 AM Eastern (UTC-5)
   workflow_dispatch:
 
 permissions:
