@@ -13,6 +13,9 @@ permissions:
 jobs:
   generate:
     runs-on: self-hosted
+    env:
+      VIRTUAL_ENV: /tmp/voice-news-venv
+      PATH: /tmp/voice-news-venv/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -49,14 +52,12 @@ jobs:
 
       - name: Set up virtual environment and install dependencies
         run: |
-          python3 -m venv /tmp/voice-news-venv
-          source /tmp/voice-news-venv/bin/activate
+          python3 -m venv "$VIRTUAL_ENV" || true
           pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run pipeline
         run: |
-          source /tmp/voice-news-venv/bin/activate
           python3 main.py \
             --config config.example.yaml \
             --output-dir /tmp/voice-news-build \
