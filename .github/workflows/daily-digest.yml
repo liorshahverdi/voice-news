@@ -14,8 +14,8 @@ jobs:
   generate:
     runs-on: self-hosted
     env:
-      VIRTUAL_ENV: /tmp/voice-news-venv
-      PATH: /tmp/voice-news-venv/bin:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin
+      PYTHON: /opt/homebrew/bin/python3
+      VENV: /tmp/voice-news-venv
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
@@ -44,21 +44,22 @@ jobs:
 
       - name: Check prerequisites
         run: |
-          python3 --version
-          python3 -c "import struct; print(f'Python arch: {struct.calcsize(\"P\") * 8}-bit')"
+          $PYTHON --version
+          file $($PYTHON -c "import sys; print(sys.executable)")
           ollama --version
           ffmpeg -version | head -1
           echo "All prerequisites found."
 
       - name: Set up virtual environment and install dependencies
         run: |
-          python3 -m venv "$VIRTUAL_ENV" || true
-          pip install --upgrade pip
-          pip install -r requirements.txt
+          rm -rf "$VENV"
+          $PYTHON -m venv "$VENV"
+          "$VENV/bin/pip" install --upgrade pip
+          "$VENV/bin/pip" install -r requirements.txt
 
       - name: Run pipeline
         run: |
-          python3 main.py \
+          "$VENV/bin/python3" main.py \
             --config config.example.yaml \
             --output-dir /tmp/voice-news-build \
             --no-play
