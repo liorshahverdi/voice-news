@@ -99,6 +99,7 @@ def main():
 
     # 3. Aggregate
     print("\n=== Aggregating stories ===")
+    print(f"[aggregator] max_stories_total = {max_total}")
     stories = aggregator.aggregate(all_batches, max_total=max_total)
     print(f"[aggregator] {len(stories)} unique stories selected.")
 
