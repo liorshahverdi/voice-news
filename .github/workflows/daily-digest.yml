@@ -2,7 +2,10 @@ name: Daily Voice News
 
 on:
   schedule:
-    - cron: '0 16 * * *'   # 11 AM Eastern (UTC-5)
+    - cron: '0 13 * * *'    # 9:00 AM EDT (UTC-4)
+    - cron: '0 14 * * *'    # 9:00 AM EST (UTC-5)
+    - cron: '30 1 * * *'    # 9:30 PM EDT (UTC-4)
+    - cron: '30 2 * * *'    # 9:30 PM EST (UTC-5)
   workflow_dispatch:
 
 permissions:
@@ -17,6 +20,21 @@ jobs:
       PYTHON: /opt/homebrew/bin/python3.12
       VENV: /tmp/voice-news-venv
     steps:
+      - name: Skip if wrong DST offset
+        if: github.event_name == 'schedule'
+        run: |
+          HOUR=$(TZ=America/New_York date +%H)
+          MINUTE=$(TZ=America/New_York date +%M)
+          ET="${HOUR}:${MINUTE}"
+          echo "Current Eastern time: $ET"
+          # Accept if we're within 15 minutes of 9:00 or 21:30
+          if [[ "$HOUR" == "09" || ("$HOUR" == "21" && "$MINUTE" -ge 15 && "$MINUTE" -le 45) ]]; then
+            echo "On schedule, proceeding."
+          else
+            echo "Off schedule (DST mismatch), skipping."
+            exit 1
+          fi
+
       - name: Checkout main
         uses: actions/checkout@v4
 
