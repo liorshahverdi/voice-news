@@ -80,7 +80,10 @@ def generate(stories: list[dict], model: str = "llama3.2:3b", host: str = "http:
                     f"Transition naturally into {source}'s stories "
                     f"(e.g. 'Over at {source}...' or 'And finally, {source}...'). "
                     f"Cover the stories below in 2-4 sentences — weave them together, don't list them. "
-                    f"Then close with a brief, warm sign-off — something that feels like the end of a good conversation.\n\n"
+                    f"Then end with a complete, warm sign-off in one sentence — e.g. "
+                    f"'That's your news for today, thanks for listening.' "
+                    f"Do NOT trail off, tease future content, or leave anything open-ended. "
+                    f"The last sentence must feel like a definitive goodbye.\n\n"
                     f"{_story_lines(items)}"
                 )
             else:
