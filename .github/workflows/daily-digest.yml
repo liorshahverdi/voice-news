@@ -4,8 +4,8 @@ on:
   schedule:
     - cron: '0 13 * * *'    # 9:00 AM EDT (UTC-4)
     - cron: '0 14 * * *'    # 9:00 AM EST (UTC-5)
-    - cron: '20 1 * * *'    # 9:20 PM EDT (UTC-4)
-    - cron: '20 2 * * *'    # 9:20 PM EST (UTC-5)
+    - cron: '34 1 * * *'    # 9:34 PM EDT (UTC-4)
+    - cron: '34 2 * * *'    # 9:34 PM EST (UTC-5)
   workflow_dispatch:
 
 permissions:
@@ -27,8 +27,8 @@ jobs:
           MINUTE=$(TZ=America/New_York date +%M)
           ET="${HOUR}:${MINUTE}"
           echo "Current Eastern time: $ET"
-          # Accept if we're within 15 minutes of 9:00 or 21:20
-          if [[ "$HOUR" == "09" || ("$HOUR" == "21" && "$MINUTE" -ge 5 && "$MINUTE" -le 35) ]]; then
+          # Accept if we're within 15 minutes of 9:00 or 21:34
+          if [[ "$HOUR" == "09" || ("$HOUR" == "21" && "$MINUTE" -ge 19 && "$MINUTE" -le 49) ]]; then
             echo "On schedule, proceeding."
           else
             echo "Off schedule (DST mismatch), skipping."
