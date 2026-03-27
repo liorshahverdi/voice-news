@@ -12,8 +12,15 @@ _SYSTEM_PROMPT = (
     "when something is surprising you say so, when something is hopeful you mean it. "
     "Talk the way a trusted friend does: contractions, natural asides, real reactions. "
     "Always sound like a person who has actually read the story. "
-    "When a story is marked '[also covered by: X, Y]', open it with a natural phrase "
+    "When a story is marked '[also covered by: X, Y]', weave that in naturally — "
     "like 'CNN and NBC are both reporting that...' or 'Both the BBC and Reuters have this one...'. "
+    "Mention the outlet each story comes from naturally in context — "
+    "e.g. 'According to Reuters...' or 'The Guardian is reporting...' — "
+    "but do NOT group stories by outlet or announce outlets as sections. "
+    "Cover all topics objectively: politics, world affairs, business, science, tech, culture — "
+    "do not favor or lead with any particular topic area. "
+    "The stories are already ordered from most significant to least significant — "
+    "follow that order, giving the biggest stories more weight. "
     "Do not use section headers, bullet points, or markdown. "
     "Do not ask questions or offer further assistance. "
     "Do not use stage directions, parenthetical notations, or tone indicators such as "
@@ -23,12 +30,13 @@ _SYSTEM_PROMPT = (
 
 def _story_lines(items: list[dict]) -> str:
     lines = []
-    for item in items:
+    for i, item in enumerate(items, 1):
         blurb = item.get("blurb", "")
         blurb_part = f" — {blurb}" if blurb else ""
         also = item.get("also_covered_by", [])
         also_part = f" [also covered by: {', '.join(also)}]" if also else ""
-        lines.append(f"• {item['title']}{blurb_part}{also_part}")
+        source = item.get("source", "")
+        lines.append(f"{i}. [{source}] {item['title']}{blurb_part}{also_part}")
     return "\n".join(lines)
 
 
@@ -40,64 +48,83 @@ def _call_ollama(system: str, prompt: str, model: str, host: str) -> str:
     return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
 
 
-def _sources_in_order(stories: list[dict]) -> list[str]:
-    seen = set()
-    order = []
-    for s in stories:
-        if s["source"] not in seen:
-            seen.add(s["source"])
-            order.append(s["source"])
-    return order
-
-
 def generate(stories: list[dict], model: str = "llama3.2:3b", host: str = "http://localhost:11434") -> str:
-    """Generate the briefing one outlet at a time and stitch the segments together."""
-    # Group stories by source, preserving outlet order
-    by_source: dict[str, list[dict]] = {}
-    for s in stories:
-        by_source.setdefault(s["source"], []).append(s)
+    """Generate the briefing as a single unified script ordered by significance."""
+    print(f"[narrator] Generating briefing for {len(stories)} stories ({model})...")
 
-    sources = _sources_in_order(stories)
-    print(f"[narrator] Generating briefing for {len(stories)} stories across {len(sources)} outlets ({model})...")
+    # Split into chunks — smaller chunks yield more detailed coverage per story
+    chunk_size = 5
+    chunks = [stories[i:i + chunk_size] for i in range(0, len(stories), chunk_size)]
 
     try:
         segments = []
-        for i, source in enumerate(sources):
-            items = by_source[source]
+        for i, chunk in enumerate(chunks):
             is_first = i == 0
-            is_last = i == len(sources) - 1
+            is_last = i == len(chunks) - 1
 
-            if is_first:
+            coverage_instruction = (
+                f"For each story, first relay the key details as reported by the original outlet "
+                f"in 3-4 sentences — what happened, who's involved, and why it matters — "
+                f"then add 1-2 sentences of your own natural reaction or context. "
+            )
+
+            if is_first and is_last:
                 prompt = (
                     f"Open with one sentence that honestly captures the feel of today's news, "
-                    f"then transition naturally into {source}'s stories "
-                    f"(e.g. 'Starting with {source}...' or '{source} is leading with...'). "
-                    f"Cover the stories below in 2-4 sentences — weave them together, don't list them.\n\n"
-                    f"{_story_lines(items)}"
+                    f"then cover each of these {len(chunk)} stories — they're ranked from most significant to least. "
+                    f"{coverage_instruction}"
+                    f"Mention each story's outlet naturally. Weave related stories together, don't just list them. "
+                    f"Do not sign off — the conclusion comes separately.\n\n"
+                    f"{_story_lines(chunk)}"
+                )
+            elif is_first:
+                prompt = (
+                    f"Open with one sentence that honestly captures the feel of today's news, "
+                    f"then cover each of these {len(chunk)} stories — they're ranked from most significant to least. "
+                    f"{coverage_instruction}"
+                    f"Mention each story's outlet naturally. Weave related stories together, don't just list them. "
+                    f"Do not sign off — more stories are coming.\n\n"
+                    f"{_story_lines(chunk)}"
                 )
             elif is_last:
                 prompt = (
-                    f"Transition naturally into {source}'s stories "
-                    f"(e.g. 'Over at {source}...' or 'And finally, {source}...'). "
-                    f"Cover the stories below in 2-4 sentences — weave them together, don't list them. "
-                    f"Then end with a complete, warm sign-off in one sentence — e.g. "
-                    f"'That's your news for today, thanks for listening.' "
-                    f"Do NOT trail off, tease future content, or leave anything open-ended. "
-                    f"The last sentence must feel like a definitive goodbye.\n\n"
-                    f"{_story_lines(items)}"
+                    f"Continue the briefing naturally with these {len(chunk)} remaining stories. "
+                    f"{coverage_instruction}"
+                    f"Mention each story's outlet naturally. Weave related stories together, don't just list them. "
+                    f"Do not sign off — the conclusion comes separately.\n\n"
+                    f"{_story_lines(chunk)}"
                 )
             else:
                 prompt = (
-                    f"Transition naturally into {source}'s stories "
-                    f"(e.g. 'Over at {source}...' or 'Meanwhile, {source}...'). "
-                    f"Cover the stories below in 2-4 sentences — weave them together, don't list them.\n\n"
-                    f"{_story_lines(items)}"
+                    f"Continue the briefing naturally with these {len(chunk)} stories. "
+                    f"{coverage_instruction}"
+                    f"Mention each story's outlet naturally. Weave related stories together, don't just list them. "
+                    f"Do not sign off — more stories are coming.\n\n"
+                    f"{_story_lines(chunk)}"
                 )
 
-            print(f"[narrator]   {i + 1}/{len(sources)} {source}...")
+            print(f"[narrator]   chunk {i + 1}/{len(chunks)} ({len(chunk)} stories)...")
             segment = _call_ollama(_SYSTEM_PROMPT, prompt, model, host)
             if segment:
                 segments.append(segment)
+
+        # Generate a reflective conclusion that ties back to the major stories
+        top_stories = stories[:5]
+        conclusion_prompt = (
+            f"You've just finished covering today's news. Here are the biggest stories you reported on:\n\n"
+            f"{_story_lines(top_stories)}\n\n"
+            f"Now wrap up the briefing with 3-4 sentences that reflect on the day's major themes — "
+            f"what connects these stories, what they say about where things are headed, "
+            f"or what stuck with you most. Be genuine and thoughtful, not generic. "
+            f"Then close with a warm, definitive sign-off in one sentence — e.g. "
+            f"'That's your news for today, thanks for listening.' or 'Take care of yourselves out there.' "
+            f"Do NOT trail off, tease future content, or leave anything open-ended. "
+            f"The last sentence must feel like a definitive goodbye."
+        )
+        print(f"[narrator]   generating conclusion...")
+        conclusion = _call_ollama(_SYSTEM_PROMPT, conclusion_prompt, model, host)
+        if conclusion:
+            segments.append(conclusion)
 
         script = "\n\n".join(segments)
         date_str = datetime.now().strftime("%A, %B %-d, %Y")

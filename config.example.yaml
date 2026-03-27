@@ -71,4 +71,4 @@ tts:
 
 # ── Output ────────────────────────────────────────────────────────────────────
 output_dir: ~/voice-news-output   # WAV files and article history saved here
-max_stories_total: 8              # cap on stories passed to the LLM
+max_stories_total: 15             # cap on stories passed to the LLM

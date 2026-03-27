@@ -45,11 +45,11 @@ def aggregate(
     all_stories: list[list[dict]],
     max_total: int = 20,
 ) -> list[dict]:
-    """Deduplicate and select stories, keeping outlet grouping intact.
+    """Deduplicate and select stories ordered by significance.
 
-    Stories are deduped globally (cross-outlet), then trimmed so no single
-    outlet dominates. Result is sorted by source so the narrator sees each
-    outlet as a contiguous block.
+    Stories are deduped globally (cross-outlet) via round-robin so no single
+    outlet dominates. Result preserves interleaved order — the most important
+    story from each outlet surfaces first.
     """
     from collections import defaultdict
 
@@ -97,12 +97,10 @@ def aggregate(
         else:
             survivor["also_covered_by"].append(story["source"])
 
-    # Re-group by source so narrator gets contiguous outlet blocks
-    grouped: dict[str, list[dict]] = defaultdict(list)
-    for story in unique:
-        grouped[story["source"]].append(story)
-
-    result = []
-    for src in source_order:
-        result.extend(grouped.get(src, []))
-    return result
+    # Sort by significance: stories covered by more outlets first,
+    # then by score (descending) as a tiebreaker
+    unique.sort(
+        key=lambda s: (len(s.get("also_covered_by", [])), s.get("score", 0)),
+        reverse=True,
+    )
+    return unique
