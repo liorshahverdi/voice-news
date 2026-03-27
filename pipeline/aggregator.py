@@ -97,10 +97,12 @@ def aggregate(
         else:
             survivor["also_covered_by"].append(story["source"])
 
-    # Sort by significance: stories covered by more outlets first,
-    # then by score (descending) as a tiebreaker
+    # Sort by significance: stories covered by more outlets rank higher.
+    # Within the same coverage count, preserve the original interleaved order
+    # (which round-robins across outlets) so no single source like HN
+    # dominates due to inflated score values.
     unique.sort(
-        key=lambda s: (len(s.get("also_covered_by", [])), s.get("score", 0)),
+        key=lambda s: len(s.get("also_covered_by", [])),
         reverse=True,
     )
     return unique
