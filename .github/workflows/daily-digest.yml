@@ -16,7 +16,7 @@ jobs:
     runs-on: self-hosted
     env:
       PYTHON: /opt/homebrew/bin/python3.12
-      VENV: /tmp/voice-news-venv
+      VENV: /tmp/voice-news-venv2
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
