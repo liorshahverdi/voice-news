@@ -53,10 +53,14 @@ jobs:
 
       - name: Set up virtual environment and install dependencies
         run: |
-          if [ ! -f "$VENV/bin/python3" ]; then
+          PYTHON_HASH=$($PYTHON -c "import sys; print(sys.version)")
+          CACHED_PYTHON_HASH=""
+          [ -f "$VENV/.python_hash" ] && CACHED_PYTHON_HASH=$(cat "$VENV/.python_hash")
+          if [ ! -f "$VENV/bin/python3" ] || [ "$PYTHON_HASH" != "$CACHED_PYTHON_HASH" ]; then
             echo "Creating new virtual environment..."
             rm -rf "$VENV"
             $PYTHON -m venv "$VENV"
+            echo "$PYTHON_HASH" > "$VENV/.python_hash"
           fi
           REQS_HASH=$(md5 -q requirements.txt)
           CACHED_HASH=""
