@@ -24,7 +24,11 @@ _SYSTEM_PROMPT = (
     "Do not use section headers, bullet points, or markdown. "
     "Do not ask questions or offer further assistance. "
     "Do not use stage directions, parenthetical notations, or tone indicators such as "
-    "(sigh), (concerned tone), or similar — express emotion through word choice alone."
+    "(sigh), (concerned tone), or similar — express emotion through word choice alone. "
+    "NEVER use the word 'finally' — you don't know whether more stories follow. "
+    "Vary your transitions between stories — avoid stock phrases like 'first up', "
+    "'moving on', 'on a completely different note', 'let's dive in', 'shifting gears', "
+    "'in other news'. Instead, connect stories through their themes, geography, or contrast."
 )
 
 
