@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice News — Insights</title>
+  <link rel="stylesheet" href="insights.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Voice News Insights</h1>
+    <a href="index.html">Listen</a>
+  </div>
+
+  <div class="dashboard">
+
+    <!-- Drift Detection -->
+    <div class="card" id="drift-card">
+      <h2>Topic Drift</h2>
+      <div class="drift-grid">
+        <div class="drift-section">
+          <h3>Emerging</h3>
+          <div class="drift-tags" id="emerging-tags">
+            <span class="loading">Loading...</span>
+          </div>
+        </div>
+        <div class="drift-section">
+          <h3>Fading</h3>
+          <div class="drift-tags" id="fading-tags">
+            <span class="loading">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topic Trends Chart -->
+    <div class="card">
+      <h2>Topic Trends (Last 30 Days)</h2>
+      <div class="chart-container">
+        <canvas id="trend-chart"></canvas>
+      </div>
+    </div>
+
+    <!-- Source × Topic Heatmap -->
+    <div class="card">
+      <h2>Source × Topic</h2>
+      <div class="heatmap-wrap" id="heatmap-wrap">
+        <p class="loading">Loading...</p>
+      </div>
+    </div>
+
+    <!-- Episode Archive -->
+    <div class="card">
+      <h2>Past Briefings</h2>
+      <div class="episode-list" id="episode-list">
+        <p class="loading">Loading...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const ACCENT = '#6c63ff';
+    const PALETTE = [
+      '#6c63ff', '#34d399', '#f87171', '#fbbf24', '#60a5fa',
+      '#a78bfa', '#fb923c', '#38bdf8', '#e879f9', '#4ade80',
+    ];
+
+    let stats = null;
+
+    fetch('topic_stats.json')
+      .then(r => r.json())
+      .then(data => { stats = data; render(); })
+      .catch(() => {
+        document.querySelectorAll('.loading').forEach(el => {
+          el.textContent = 'No data yet — run the pipeline to generate insights.';
+          el.classList.add('empty');
+        });
+      });
+
+    function render() {
+      renderDrift();
+      renderTrendChart();
+      renderHeatmap();
+      renderEpisodes();
+    }
+
+    // --- Drift ---
+    function renderDrift() {
+      const drift = stats.drift || {};
+      const emergingEl = document.getElementById('emerging-tags');
+      const fadingEl = document.getElementById('fading-tags');
+
+      emergingEl.innerHTML = '';
+      fadingEl.innerHTML = '';
+
+      if (drift.emerging && drift.emerging.length) {
+        drift.emerging.forEach(t => {
+          const tag = document.createElement('span');
+          tag.className = 'drift-tag emerging';
+          tag.textContent = '\u2197 ' + t;
+          emergingEl.appendChild(tag);
+        });
+      } else {
+        emergingEl.innerHTML = '<span class="drift-none">No emerging topics detected</span>';
+      }
+
+      if (drift.fading && drift.fading.length) {
+        drift.fading.forEach(t => {
+          const tag = document.createElement('span');
+          tag.className = 'drift-tag fading';
+          tag.textContent = '\u2198 ' + t;
+          fadingEl.appendChild(tag);
+        });
+      } else {
+        fadingEl.innerHTML = '<span class="drift-none">No fading topics detected</span>';
+      }
+    }
+
+    // --- Trend Chart ---
+    function renderTrendChart() {
+      const daily = stats.daily_topics || {};
+      const dates = Object.keys(daily).sort().slice(-30);
+
+      if (!dates.length) {
+        document.getElementById('trend-chart').parentElement.innerHTML =
+          '<p class="empty">Not enough data for trends yet.</p>';
+        return;
+      }
+
+      // Count total mentions per topic across these dates
+      const topicTotals = {};
+      dates.forEach(d => {
+        Object.entries(daily[d] || {}).forEach(([topic, info]) => {
+          topicTotals[topic] = (topicTotals[topic] || 0) + info.count;
+        });
+      });
+
+      // Top 10 topics
+      const topTopics = Object.entries(topicTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(e => e[0]);
+
+      const datasets = topTopics.map((topic, i) => ({
+        label: topic,
+        data: dates.map(d => (daily[d] && daily[d][topic]) ? daily[d][topic].count : 0),
+        borderColor: PALETTE[i % PALETTE.length],
+        backgroundColor: PALETTE[i % PALETTE.length] + '22',
+        tension: 0.3,
+        fill: false,
+        pointRadius: 2,
+        borderWidth: 2,
+      }));
+
+      new Chart(document.getElementById('trend-chart'), {
+        type: 'line',
+        data: { labels: dates, datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              labels: { color: '#888899', font: { size: 11 } },
+            },
+          },
+          scales: {
+            x: {
+              ticks: { color: '#888899', font: { size: 10 }, maxRotation: 45 },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+            },
+            y: {
+              ticks: { color: '#888899', stepSize: 1 },
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              beginAtZero: true,
+            },
+          },
+        },
+      });
+    }
+
+    // --- Heatmap ---
+    function renderHeatmap() {
+      const matrix = stats.source_topic_matrix || {};
+      const wrap = document.getElementById('heatmap-wrap');
+      const sources = Object.keys(matrix);
+
+      if (!sources.length) {
+        wrap.innerHTML = '<p class="empty">No source data yet.</p>';
+        return;
+      }
+
+      // Get top 15 topics by total across all sources
+      const topicTotals = {};
+      sources.forEach(src => {
+        Object.entries(matrix[src]).forEach(([t, c]) => {
+          topicTotals[t] = (topicTotals[t] || 0) + c;
+        });
+      });
+      const topics = Object.entries(topicTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(e => e[0]);
+
+      // Find max for color scaling
+      let maxVal = 1;
+      sources.forEach(src => {
+        topics.forEach(t => {
+          const v = matrix[src][t] || 0;
+          if (v > maxVal) maxVal = v;
+        });
+      });
+
+      let html = '<table class="heatmap"><thead><tr><th></th>';
+      topics.forEach(t => { html += `<th>${t}</th>`; });
+      html += '</tr></thead><tbody>';
+
+      sources.forEach(src => {
+        html += `<tr><td>${src}</td>`;
+        topics.forEach(t => {
+          const v = matrix[src][t] || 0;
+          const intensity = v / maxVal;
+          const bg = v > 0
+            ? `rgba(108, 99, 255, ${0.1 + intensity * 0.7})`
+            : 'transparent';
+          html += `<td class="cell" style="background:${bg}" title="${src}: ${t} (${v})">${v || ''}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    // --- Episodes ---
+    function renderEpisodes() {
+      const episodes = stats.recent_episodes || [];
+      const list = document.getElementById('episode-list');
+
+      if (!episodes.length) {
+        list.innerHTML = '<p class="empty">No episodes recorded yet.</p>';
+        return;
+      }
+
+      list.innerHTML = '';
+      episodes.forEach(ep => {
+        const div = document.createElement('div');
+        div.className = 'episode';
+
+        const dateEl = document.createElement('span');
+        dateEl.className = 'episode-date';
+        dateEl.textContent = ep.date;
+
+        const countEl = document.createElement('span');
+        countEl.className = 'episode-count';
+        countEl.textContent = ep.story_count + ' stories';
+
+        const topicsEl = document.createElement('div');
+        topicsEl.className = 'episode-topics';
+        (ep.top_topics || []).forEach(t => {
+          const pill = document.createElement('span');
+          pill.className = 'topic-pill';
+          pill.textContent = t;
+          topicsEl.appendChild(pill);
+        });
+
+        div.appendChild(dateEl);
+        div.appendChild(countEl);
+        div.appendChild(topicsEl);
+        list.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>

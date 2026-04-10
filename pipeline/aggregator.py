@@ -11,9 +11,13 @@ _STOPWORDS = {
 }
 
 
-def _significant_words(title: str) -> set[str]:
+def significant_words(title: str) -> set[str]:
     words = re.findall(r"[a-z]+", title.lower())
     return {w for w in words if w not in _STOPWORDS and len(w) > 2}
+
+
+# Keep underscore alias for internal use
+_significant_words = significant_words
 
 
 def _key_tokens(title: str) -> set[str]:

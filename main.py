@@ -9,14 +9,16 @@ Usage:
 """
 
 import argparse
+import json
 import subprocess
 import sys
 import yaml
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sources import hackernews, reddit, rss
-from pipeline import aggregator, narrator, tts, seen
+from pipeline import aggregator, narrator, tts, seen, archive, topics, insights
 
 
 def load_config(path: str) -> dict:
@@ -107,9 +109,37 @@ def main():
         print("No stories fetched. Check your network / config.", file=sys.stderr)
         sys.exit(1)
 
+    # 3.5 Extract topics
+    ollama_cfg = cfg.get("ollama", {})
+    topics_cfg = cfg.get("topics", {})
+    if topics_cfg.get("enabled", True):
+        topics.extract(
+            stories,
+            model=ollama_cfg.get("model", "llama3.2:3b"),
+            host=ollama_cfg.get("host", "http://localhost:11434"),
+        )
+
+    # 3.7 Save to archive
+    now = datetime.now(timezone.utc)
+    run_id = now.strftime("%Y-%m-%d_%H%M")
+    story_archive = archive.load(output_dir)
+    story_archive = archive.add_stories(story_archive, stories, run_id)
+    archive.save(output_dir, story_archive)
+    print(f"[archive] Saved {len(story_archive['stories'])} total stories.")
+
+    # 3.8 Generate insights
+    insights_cfg = cfg.get("insights", {})
+    if insights_cfg.get("enabled", True):
+        topic_stats = insights.generate(
+            story_archive, output_dir,
+            history_days=insights_cfg.get("history_days", 90),
+        )
+        top_topics = list(topic_stats.get("topic_summary", {}).keys())[:5]
+    else:
+        top_topics = []
+
     # 4. Narrate
     print("\n=== Generating Jarvis script ===")
-    ollama_cfg = cfg.get("ollama", {})
     script = narrator.generate(
         stories,
         model=ollama_cfg.get("model", "llama3.2:3b"),
@@ -124,6 +154,20 @@ def main():
     transcript_path = Path(output_dir) / "transcript.txt"
     transcript_path.write_text(script)
     print(f"[transcript] Saved to {transcript_path}")
+
+    # Save enriched metadata
+    sources_used = sorted({s.get("source", "") for s in stories if s.get("source")})
+    metadata = {
+        "generated_at": now.isoformat(),
+        "run_id": run_id,
+        "story_count": len(stories),
+        "top_topics": top_topics,
+        "sources_used": sources_used,
+        "archive_size": len(story_archive["stories"]),
+    }
+    metadata_path = Path(output_dir) / "metadata.json"
+    metadata_path.write_text(json.dumps(metadata, indent=2))
+    print(f"[metadata] Saved to {metadata_path}")
 
     # Save seen URLs so these articles are skipped next run
     new_urls = [s["url"] for s in stories if s.get("url")]

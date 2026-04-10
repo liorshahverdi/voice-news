@@ -63,6 +63,16 @@ rss_feeds:
   - { name: "New Scientist",    url: "https://www.newscientist.com/feed/home/",                      max: 2 }
   - { name: "NASA",             url: "https://www.nasa.gov/rss/dyn/breaking_news.rss",               max: 2, homepage: "https://www.nasa.gov/news" }
 
+# ── Topics & Insights ────────────────────────────────────────────────────────
+topics:
+  enabled: true
+  max_per_story: 4
+
+insights:
+  enabled: true
+  history_days: 90
+  min_topic_count: 3
+
 # ── TTS ───────────────────────────────────────────────────────────────────────
 # Kokoro voice ID. Format: {lang_prefix}_{name}
 # Common options: bf_emma, bf_alice, am_michael, am_adam, af_sky
