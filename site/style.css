@@ -20,6 +20,31 @@ body {
   align-items: center;
 }
 
+/* === Site Nav === */
+#site-nav {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 200;
+}
+
+#site-nav a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  padding: 0.4rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 50px;
+  background: rgba(108, 99, 255, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+#site-nav a:hover {
+  background: var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-glow);
+}
+
 /* === Splash Overlay === */
 #splash {
   position: fixed;

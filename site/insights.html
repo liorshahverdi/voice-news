@@ -16,8 +16,36 @@
 
   <div class="dashboard">
 
-    <!-- Drift Detection -->
-    <div class="card" id="drift-card">
+    <!-- 1. Narrative Analysis -->
+    <div class="card full-width narrative-card" id="narrative-card">
+      <div class="section-label">AI Analysis</div>
+      <div id="narrative-content">
+        <div class="skeleton skeleton-line" style="width:90%"></div>
+        <div class="skeleton skeleton-line" style="width:75%"></div>
+        <div class="skeleton skeleton-line" style="width:60%"></div>
+      </div>
+    </div>
+
+    <!-- 2. Key Metrics Bar -->
+    <div class="card quarter-width stat-card" id="stat-sources">
+      <div class="stat-value accent" id="stat-sources-val">—</div>
+      <div class="stat-label">Sources Active</div>
+    </div>
+    <div class="card quarter-width stat-card" id="stat-topics">
+      <div class="stat-value green" id="stat-topics-val">—</div>
+      <div class="stat-label">Topics Tracked</div>
+    </div>
+    <div class="card quarter-width stat-card" id="stat-diversity">
+      <div class="stat-value blue" id="stat-diversity-val">—</div>
+      <div class="stat-label">Diversity Index</div>
+    </div>
+    <div class="card quarter-width stat-card" id="stat-stories">
+      <div class="stat-value amber" id="stat-stories-val">—</div>
+      <div class="stat-label">Stories (7d)</div>
+    </div>
+
+    <!-- 3. Topic Drift -->
+    <div class="card full-width" id="drift-card">
       <h2>Topic Drift</h2>
       <div class="drift-grid">
         <div class="drift-section">
@@ -33,29 +61,57 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Topic Trends Chart -->
-    <div class="card">
-      <h2>Topic Trends (Last 30 Days)</h2>
-      <div class="chart-container">
-        <canvas id="trend-chart"></canvas>
+      <div class="semantic-drift-section" id="semantic-drift-section" style="display:none">
+        <h3>Narrative Shifts</h3>
+        <div id="semantic-drift-list"></div>
       </div>
     </div>
 
-    <!-- Source × Topic Heatmap -->
-    <div class="card">
-      <h2>Source × Topic</h2>
-      <div class="heatmap-wrap" id="heatmap-wrap">
-        <p class="loading">Loading...</p>
+    <!-- 4. Topic Velocity -->
+    <div class="card full-width" id="velocity-card">
+      <h2>Topics</h2>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="velocity-tab">Velocity</button>
+        <button class="tab-btn" data-tab="trends-tab">Trends</button>
+      </div>
+      <div class="tab-content active" id="velocity-tab">
+        <div class="velocity-bars" id="velocity-bars">
+          <span class="loading">Loading...</span>
+        </div>
+      </div>
+      <div class="tab-content" id="trends-tab">
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
       </div>
     </div>
 
-    <!-- Episode Archive -->
-    <div class="card">
+    <!-- 5. Source Coverage Profile -->
+    <div class="card full-width" id="source-card">
+      <h2>Source Coverage Profile</h2>
+      <div class="source-list" id="source-list">
+        <span class="loading">Loading...</span>
+      </div>
+    </div>
+
+    <!-- 6. Past Briefings -->
+    <div class="card full-width" id="episodes-card">
       <h2>Past Briefings</h2>
       <div class="episode-list" id="episode-list">
-        <p class="loading">Loading...</p>
+        <span class="loading">Loading...</span>
+      </div>
+    </div>
+
+    <!-- 7. Source x Topic Heatmap (collapsible, starts collapsed) -->
+    <div class="card full-width collapsed" id="heatmap-card">
+      <div class="collapsible-header" onclick="toggleCollapse(this)">
+        <h2 style="margin-bottom:0">Source × Topic Heatmap</h2>
+        <span class="collapse-icon">▶</span>
+      </div>
+      <div class="collapsible-body">
+        <div class="heatmap-wrap" id="heatmap-wrap">
+          <p class="loading">Loading...</p>
+        </div>
       </div>
     </div>
 
@@ -78,16 +134,100 @@
           el.textContent = 'No data yet — run the pipeline to generate insights.';
           el.classList.add('empty');
         });
+        document.getElementById('narrative-content').innerHTML =
+          '<p class="empty">No data yet — run the pipeline to generate insights.</p>';
       });
 
     function render() {
+      renderNarrative();
+      renderMetrics();
       renderDrift();
+      renderSemanticDrift();
+      renderVelocity();
       renderTrendChart();
-      renderHeatmap();
+      renderSourceCoverage();
       renderEpisodes();
+      renderHeatmap();
     }
 
-    // --- Drift ---
+    // --- Collapsible ---
+    function toggleCollapse(header) {
+      header.closest('.card').classList.toggle('collapsed');
+    }
+
+    // --- Tabs ---
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const parent = btn.closest('.card');
+        parent.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.tab).classList.add('active');
+      });
+    });
+
+    // === 1. Narrative Analysis ===
+    function renderNarrative() {
+      const n = stats.narrative || {};
+      const el = document.getElementById('narrative-content');
+
+      if (!n.daily_briefing && !n.weekly_analysis && !n.notable_observation) {
+        el.innerHTML = '<p class="empty">Narrative analysis not available — requires Ollama.</p>';
+        return;
+      }
+
+      let html = '';
+
+      if (n.daily_briefing) {
+        html += `
+          <div class="narrative-section">
+            <div class="narrative-label">Today</div>
+            <p class="narrative-text">${escHtml(n.daily_briefing)}</p>
+          </div>`;
+      }
+
+      if (n.weekly_analysis) {
+        html += `
+          <div class="narrative-section">
+            <div class="narrative-label">This Week</div>
+            <p class="narrative-text">${escHtml(n.weekly_analysis)}</p>
+          </div>`;
+      }
+
+      if (n.notable_observation) {
+        html += `
+          <div class="narrative-callout">
+            <div class="narrative-label">Notable</div>
+            <p class="narrative-text">${escHtml(n.notable_observation)}</p>
+          </div>`;
+      }
+
+      el.innerHTML = html;
+    }
+
+    // === 2. Key Metrics ===
+    function renderMetrics() {
+      const m = stats.metrics || {};
+      const div = m.coverage_diversity || {};
+      const vol = m.daily_volume || [];
+
+      document.getElementById('stat-sources-val').textContent =
+        div.source_count != null ? div.source_count : '—';
+      document.getElementById('stat-topics-val').textContent =
+        div.topic_count != null ? div.topic_count : '—';
+
+      if (div.gini_coefficient != null) {
+        const diversityPct = Math.round((1 - div.gini_coefficient) * 100);
+        document.getElementById('stat-diversity-val').textContent = diversityPct + '%';
+      }
+
+      // Stories in last 7 days from daily_volume
+      const last7 = vol.slice(-7);
+      const stories7d = last7.reduce((s, d) => s + d.count, 0);
+      document.getElementById('stat-stories-val').textContent = stories7d || '—';
+    }
+
+    // === 3. Topic Drift (emerging/fading) ===
     function renderDrift() {
       const drift = stats.drift || {};
       const emergingEl = document.getElementById('emerging-tags');
@@ -119,7 +259,73 @@
       }
     }
 
-    // --- Trend Chart ---
+    // === 3b. Semantic Drift ===
+    function renderSemanticDrift() {
+      const sd = stats.semantic_drift || {};
+      const tracked = sd.tracked_topics || {};
+      const topics = Object.entries(tracked).sort((a, b) => b[1].drift_score - a[1].drift_score);
+      const section = document.getElementById('semantic-drift-section');
+      const list = document.getElementById('semantic-drift-list');
+
+      if (!topics.length) return;
+
+      section.style.display = 'block';
+      list.innerHTML = '';
+
+      topics.forEach(([name, info]) => {
+        const score = info.drift_score || 0;
+        const pct = Math.round(score * 100);
+        const level = score > 0.3 ? 'high' : (score > 0.1 ? 'medium' : 'low');
+        const explanation = info.drift_explanation || info.drift_direction || '';
+
+        const item = document.createElement('div');
+        item.className = 'drift-item';
+        item.innerHTML = `
+          <span class="drift-topic-pill">${escHtml(name)}</span>
+          <div class="drift-bar-wrap">
+            <div class="drift-bar">
+              <div class="drift-bar-fill ${level}" style="width:${pct}%"></div>
+            </div>
+            ${explanation ? `<div class="drift-explanation">${escHtml(explanation)}</div>` : ''}
+          </div>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    // === 4a. Topic Velocity ===
+    function renderVelocity() {
+      const vel = (stats.metrics || {}).topic_velocity || [];
+      const wrap = document.getElementById('velocity-bars');
+
+      if (!vel.length) {
+        wrap.innerHTML = '<p class="empty">Not enough data for velocity analysis.</p>';
+        return;
+      }
+
+      const maxVel = Math.max(...vel.map(v => v.velocity), 1);
+      wrap.innerHTML = '';
+
+      vel.forEach((v, i) => {
+        const pct = Math.min((v.velocity / maxVel) * 100, 100);
+        const row = document.createElement('div');
+        row.className = 'velocity-row';
+        row.style.animationDelay = (i * 40) + 'ms';
+
+        const arrow = v.direction === 'rising' ? '↑' : (v.direction === 'falling' ? '↓' : '→');
+
+        row.innerHTML = `
+          <span class="velocity-label">${escHtml(v.topic)}</span>
+          <div class="velocity-bar-wrap">
+            <div class="velocity-bar ${v.direction}" style="width:${pct}%"></div>
+          </div>
+          <span class="velocity-value">${arrow} ${v.velocity}x</span>
+        `;
+        wrap.appendChild(row);
+      });
+    }
+
+    // === 4b. Trend Chart ===
     function renderTrendChart() {
       const daily = stats.daily_topics || {};
       const dates = Object.keys(daily).sort().slice(-30);
@@ -130,7 +336,6 @@
         return;
       }
 
-      // Count total mentions per topic across these dates
       const topicTotals = {};
       dates.forEach(d => {
         Object.entries(daily[d] || {}).forEach(([topic, info]) => {
@@ -138,7 +343,6 @@
         });
       });
 
-      // Top 10 topics
       const topTopics = Object.entries(topicTotals)
         .sort((a, b) => b[1] - a[1])
         .slice(0, 10)
@@ -163,16 +367,16 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              labels: { color: '#888899', font: { size: 11 } },
+              labels: { color: '#8888a0', font: { size: 11, family: 'Inter' } },
             },
           },
           scales: {
             x: {
-              ticks: { color: '#888899', font: { size: 10 }, maxRotation: 45 },
+              ticks: { color: '#8888a0', font: { size: 10 }, maxRotation: 45 },
               grid: { color: 'rgba(255,255,255,0.04)' },
             },
             y: {
-              ticks: { color: '#888899', stepSize: 1 },
+              ticks: { color: '#8888a0', stepSize: 1 },
               grid: { color: 'rgba(255,255,255,0.04)' },
               beginAtZero: true,
             },
@@ -181,60 +385,36 @@
       });
     }
 
-    // --- Heatmap ---
-    function renderHeatmap() {
-      const matrix = stats.source_topic_matrix || {};
-      const wrap = document.getElementById('heatmap-wrap');
-      const sources = Object.keys(matrix);
+    // === 5. Source Coverage Profile ===
+    function renderSourceCoverage() {
+      const bias = (stats.metrics || {}).source_bias_indicators || [];
+      const list = document.getElementById('source-list');
 
-      if (!sources.length) {
-        wrap.innerHTML = '<p class="empty">No source data yet.</p>';
+      if (!bias.length) {
+        list.innerHTML = '<p class="empty">No source data yet.</p>';
         return;
       }
 
-      // Get top 15 topics by total across all sources
-      const topicTotals = {};
-      sources.forEach(src => {
-        Object.entries(matrix[src]).forEach(([t, c]) => {
-          topicTotals[t] = (topicTotals[t] || 0) + c;
-        });
+      list.innerHTML = '';
+      bias.forEach(b => {
+        const pct = Math.round(b.concentration * 100);
+        const level = pct > 60 ? 'concentrated' : (pct > 30 ? 'moderate' : 'diverse');
+
+        const row = document.createElement('div');
+        row.className = 'source-row';
+        row.innerHTML = `
+          <span class="source-name">${escHtml(b.source)}</span>
+          <div class="concentration-bar-wrap">
+            <div class="concentration-bar ${level}" style="width:${pct}%"></div>
+          </div>
+          <span class="source-dominant">${escHtml(b.dominant_topic)}</span>
+          <span class="source-topic-count">${b.topic_count} topics</span>
+        `;
+        list.appendChild(row);
       });
-      const topics = Object.entries(topicTotals)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
-        .map(e => e[0]);
-
-      // Find max for color scaling
-      let maxVal = 1;
-      sources.forEach(src => {
-        topics.forEach(t => {
-          const v = matrix[src][t] || 0;
-          if (v > maxVal) maxVal = v;
-        });
-      });
-
-      let html = '<table class="heatmap"><thead><tr><th></th>';
-      topics.forEach(t => { html += `<th>${t}</th>`; });
-      html += '</tr></thead><tbody>';
-
-      sources.forEach(src => {
-        html += `<tr><td>${src}</td>`;
-        topics.forEach(t => {
-          const v = matrix[src][t] || 0;
-          const intensity = v / maxVal;
-          const bg = v > 0
-            ? `rgba(108, 99, 255, ${0.1 + intensity * 0.7})`
-            : 'transparent';
-          html += `<td class="cell" style="background:${bg}" title="${src}: ${t} (${v})">${v || ''}</td>`;
-        });
-        html += '</tr>';
-      });
-
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
     }
 
-    // --- Episodes ---
+    // === 6. Past Briefings ===
     function renderEpisodes() {
       const episodes = stats.recent_episodes || [];
       const list = document.getElementById('episode-list');
@@ -249,28 +429,105 @@
         const div = document.createElement('div');
         div.className = 'episode';
 
-        const dateEl = document.createElement('span');
-        dateEl.className = 'episode-date';
-        dateEl.textContent = ep.date;
+        const topicPills = (ep.top_topics || [])
+          .map(t => `<span class="topic-pill">${escHtml(t)}</span>`)
+          .join('');
 
-        const countEl = document.createElement('span');
-        countEl.className = 'episode-count';
-        countEl.textContent = ep.story_count + ' stories';
+        div.innerHTML = `
+          <div class="episode-header">
+            <span class="episode-date">${escHtml(ep.date)}</span>
+            <span class="episode-count">${ep.story_count} stories</span>
+            <div class="episode-topics">${topicPills}</div>
+            <span class="episode-chevron">▶</span>
+          </div>
+          <div class="episode-stories">${renderStories(ep.stories || [])}</div>
+        `;
 
-        const topicsEl = document.createElement('div');
-        topicsEl.className = 'episode-topics';
-        (ep.top_topics || []).forEach(t => {
-          const pill = document.createElement('span');
-          pill.className = 'topic-pill';
-          pill.textContent = t;
-          topicsEl.appendChild(pill);
+        div.querySelector('.episode-header').addEventListener('click', () => {
+          div.classList.toggle('expanded');
         });
 
-        div.appendChild(dateEl);
-        div.appendChild(countEl);
-        div.appendChild(topicsEl);
         list.appendChild(div);
       });
+    }
+
+    function renderStories(stories) {
+      if (!stories.length) return '<p class="empty" style="padding:0.5rem">No story details available.</p>';
+
+      return stories.map(s => {
+        const coverageLabel = s.coverage_count > 1 ? `${s.coverage_count} sources` : '';
+        const url = s.url ? `href="${escAttr(s.url)}" target="_blank" rel="noopener"` : '';
+
+        return `
+          <div class="story-row">
+            <span class="story-source-badge">${escHtml(s.source || '?')}</span>
+            <a class="story-title" ${url}>${escHtml(s.title || 'Untitled')}</a>
+            ${coverageLabel ? `<span class="story-coverage">${coverageLabel}</span>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    // === 7. Heatmap ===
+    function renderHeatmap() {
+      const matrix = stats.source_topic_matrix || {};
+      const wrap = document.getElementById('heatmap-wrap');
+      const sources = Object.keys(matrix);
+
+      if (!sources.length) {
+        wrap.innerHTML = '<p class="empty">No source data yet.</p>';
+        return;
+      }
+
+      const topicTotals = {};
+      sources.forEach(src => {
+        Object.entries(matrix[src]).forEach(([t, c]) => {
+          topicTotals[t] = (topicTotals[t] || 0) + c;
+        });
+      });
+      const topics = Object.entries(topicTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(e => e[0]);
+
+      let maxVal = 1;
+      sources.forEach(src => {
+        topics.forEach(t => {
+          const v = matrix[src][t] || 0;
+          if (v > maxVal) maxVal = v;
+        });
+      });
+
+      let html = '<table class="heatmap"><thead><tr><th></th>';
+      topics.forEach(t => { html += `<th>${escHtml(t)}</th>`; });
+      html += '</tr></thead><tbody>';
+
+      sources.forEach(src => {
+        html += `<tr><td>${escHtml(src)}</td>`;
+        topics.forEach(t => {
+          const v = matrix[src][t] || 0;
+          const intensity = v / maxVal;
+          const bg = v > 0
+            ? `rgba(108, 99, 255, ${0.1 + intensity * 0.7})`
+            : 'transparent';
+          html += `<td class="cell" style="background:${bg}" title="${escAttr(src)}: ${escAttr(t)} (${v})">${v || ''}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+    }
+
+    // --- Utilities ---
+    function escHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function escAttr(str) {
+      return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
   </script>
 </body>

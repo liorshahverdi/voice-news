@@ -1,30 +1,39 @@
-/* === Insights Dashboard — reuses voice-news design tokens === */
+/* === Insights Dashboard — Professional Design System === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0a0a0f;
-  --surface: #14141f;
-  --text: #e0e0e8;
-  --text-dim: #888899;
+  --bg: #0c0c14;
+  --surface: #161622;
+  --elevated: #1e1e2e;
+  --text: #f0f0f5;
+  --text-secondary: #8888a0;
+  --text-tertiary: #55556a;
   --accent: #6c63ff;
   --accent-glow: rgba(108, 99, 255, 0.3);
   --green: #34d399;
   --red: #f87171;
   --amber: #fbbf24;
+  --blue: #60a5fa;
+  --card-bg: rgba(255, 255, 255, 0.04);
+  --card-border: rgba(255, 255, 255, 0.06);
+  --radius: 16px;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
   padding: 2rem 1.5rem;
+  line-height: 1.5;
 }
 
-/* --- Header --- */
+/* === Header === */
 .header {
-  max-width: 900px;
-  margin: 0 auto 2rem;
+  max-width: 1200px;
+  margin: 0 auto 2.5rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -36,58 +45,181 @@ body {
   font-size: 1.5rem;
   font-weight: 300;
   letter-spacing: 0.05em;
+  color: var(--text);
 }
 
 .header a {
   color: var(--accent);
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
   padding: 0.4rem 1rem;
   border: 1px solid var(--accent);
   border-radius: 50px;
-  transition: background 0.2s;
+  background: rgba(108, 99, 255, 0.08);
+  transition: background 0.2s, box-shadow 0.2s;
 }
 
 .header a:hover {
   background: var(--accent-glow);
+  box-shadow: 0 0 12px var(--accent-glow);
 }
 
-/* --- Sections --- */
+/* === Dashboard Grid === */
 .dashboard {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1.5rem;
 }
 
 .card {
-  background: var(--surface);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 12px;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
   padding: 1.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  animation: cardEntrance 0.4s ease-out both;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.full-width { grid-column: span 12; }
+.half-width { grid-column: span 6; }
+.quarter-width { grid-column: span 3; }
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card:nth-child(1) { animation-delay: 0ms; }
+.card:nth-child(2) { animation-delay: 50ms; }
+.card:nth-child(3) { animation-delay: 100ms; }
+.card:nth-child(4) { animation-delay: 150ms; }
+.card:nth-child(5) { animation-delay: 200ms; }
+.card:nth-child(6) { animation-delay: 250ms; }
+.card:nth-child(7) { animation-delay: 300ms; }
+.card:nth-child(8) { animation-delay: 350ms; }
+.card:nth-child(9) { animation-delay: 400ms; }
+.card:nth-child(10) { animation-delay: 450ms; }
+.card:nth-child(11) { animation-delay: 500ms; }
+
+/* === Section Labels === */
+.section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  margin-bottom: 1rem;
 }
 
 .card h2 {
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1.125rem;
+  font-weight: 600;
   margin-bottom: 1rem;
   color: var(--text);
 }
 
-/* --- Drift Cards --- */
+/* === 1. Narrative Analysis === */
+.narrative-card {
+  border-left: 3px solid var(--accent);
+}
+
+.narrative-section {
+  margin-bottom: 1.25rem;
+}
+
+.narrative-section:last-child {
+  margin-bottom: 0;
+}
+
+.narrative-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.narrative-text {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.narrative-callout {
+  background: rgba(108, 99, 255, 0.06);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  padding: 1rem 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.narrative-callout .narrative-text {
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* === 2. Stat Cards === */
+.stat-card {
+  text-align: center;
+  padding: 1.25rem 1rem;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 0.25rem;
+}
+
+.stat-value.accent { color: var(--accent); }
+.stat-value.green { color: var(--green); }
+.stat-value.blue { color: var(--blue); }
+.stat-value.amber { color: var(--amber); }
+
+.stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.stat-trend {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  margin-top: 0.25rem;
+}
+
+/* === 3. Topic Drift === */
 .drift-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .drift-section h3 {
-  font-size: 0.85rem;
-  color: var(--text-dim);
-  margin-bottom: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
 }
 
 .drift-tags {
@@ -104,36 +236,419 @@ body {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 500;
+  transition: transform 0.15s ease;
+}
+
+.drift-tag:hover {
+  transform: scale(1.05);
 }
 
 .drift-tag.emerging {
-  background: rgba(52, 211, 153, 0.15);
+  background: rgba(52, 211, 153, 0.12);
   color: var(--green);
-  border: 1px solid rgba(52, 211, 153, 0.3);
+  border: 1px solid rgba(52, 211, 153, 0.25);
 }
 
 .drift-tag.fading {
-  background: rgba(248, 113, 113, 0.15);
+  background: rgba(248, 113, 113, 0.12);
   color: var(--red);
-  border: 1px solid rgba(248, 113, 113, 0.3);
+  border: 1px solid rgba(248, 113, 113, 0.25);
 }
 
 .drift-none {
-  color: var(--text-dim);
+  color: var(--text-tertiary);
   font-size: 0.85rem;
   font-style: italic;
 }
 
-/* --- Chart --- */
-.chart-container {
-  position: relative;
-  width: 100%;
-  height: 350px;
+/* Narrative Shifts (semantic drift) */
+.semantic-drift-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--card-border);
 }
 
-/* --- Heatmap Table --- */
+.semantic-drift-section h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.drift-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.drift-item:last-child {
+  margin-bottom: 0;
+}
+
+.drift-topic-pill {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(108, 99, 255, 0.15);
+  color: var(--accent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.drift-bar-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.drift-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.drift-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.drift-bar-fill.low { background: var(--green); }
+.drift-bar-fill.medium { background: var(--amber); }
+.drift-bar-fill.high { background: var(--red); }
+
+.drift-explanation {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* === 4. Topic Velocity === */
+.tab-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--card-border);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.tab-btn:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+.velocity-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.velocity-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.velocity-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 120px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.velocity-bar-wrap {
+  flex: 1;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.velocity-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+  min-width: 2px;
+}
+
+.velocity-bar.rising { background: var(--green); }
+.velocity-bar.falling { background: var(--red); }
+.velocity-bar.stable { background: var(--text-tertiary); }
+
+.velocity-value {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 3.5rem;
+  text-align: left;
+}
+
+/* === 5. Source Coverage Profile === */
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: background 0.15s;
+}
+
+.source-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.source-name {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  min-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.concentration-bar-wrap {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.concentration-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.concentration-bar.diverse { background: var(--green); }
+.concentration-bar.moderate { background: var(--amber); }
+.concentration-bar.concentrated { background: var(--red); }
+
+.source-dominant {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  background: rgba(108, 99, 255, 0.12);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.source-topic-count {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+/* === 6. Past Briefings (Episodes) === */
+.episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.episode {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border: 1px solid transparent;
+}
+
+.episode:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.episode-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.episode-date {
+  font-size: 0.85rem;
+  color: var(--text);
+  font-weight: 500;
+  min-width: 6.5rem;
+}
+
+.episode-count {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  min-width: 5rem;
+}
+
+.episode-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  flex: 1;
+}
+
+.topic-pill {
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: rgba(108, 99, 255, 0.12);
+  color: var(--accent);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+}
+
+.episode-chevron {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.episode.expanded .episode-chevron {
+  transform: rotate(90deg);
+}
+
+.episode-stories {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.episode.expanded .episode-stories {
+  max-height: 2000px;
+}
+
+.story-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem 0.6rem 1.5rem;
+  transition: background 0.15s;
+  border-radius: 6px;
+}
+
+.story-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.story-source-badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.story-title {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  flex: 1;
+  transition: color 0.15s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.story-title:hover {
+  color: var(--accent);
+}
+
+.story-coverage {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* === 7. Heatmap (Collapsible) === */
+.collapsible-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.collapsible-header .collapse-icon {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+}
+
+.card.collapsed .collapsible-header .collapse-icon {
+  transform: rotate(-90deg);
+}
+
+.collapsible-body {
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.2s ease;
+  opacity: 1;
+}
+
+.card.collapsed .collapsible-body {
+  max-height: 0;
+  opacity: 0;
+}
+
 .heatmap-wrap {
   overflow-x: auto;
+  margin-top: 1rem;
 }
 
 .heatmap {
@@ -149,8 +664,9 @@ body {
 }
 
 .heatmap th {
-  color: var(--text-dim);
+  color: var(--text-secondary);
   font-weight: 500;
+  font-size: 0.7rem;
   position: sticky;
   top: 0;
   background: var(--surface);
@@ -170,62 +686,90 @@ body {
   min-width: 2rem;
 }
 
-/* --- Episode List --- */
-.episode-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+/* === Chart === */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 350px;
 }
 
-.episode {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.episode-date {
-  font-size: 0.85rem;
-  color: var(--text);
-  font-weight: 500;
-  min-width: 6rem;
-}
-
-.episode-count {
-  font-size: 0.8rem;
-  color: var(--text-dim);
-  min-width: 5rem;
-}
-
-.episode-topics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-}
-
-.topic-pill {
-  padding: 0.2rem 0.55rem;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  background: var(--accent-glow);
-  color: var(--accent);
-  border: 1px solid rgba(108, 99, 255, 0.2);
-}
-
-/* --- Loading / Empty --- */
+/* === Loading / Empty States === */
 .loading, .empty {
   text-align: center;
-  color: var(--text-dim);
+  color: var(--text-tertiary);
   padding: 2rem;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
-/* --- Responsive --- */
-@media (max-width: 600px) {
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.04) 25%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.04) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skeleton-line {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+  border-radius: 4px;
+}
+
+.skeleton-line:last-child {
+  width: 60%;
+}
+
+/* === Scrollbar === */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+
+/* === Responsive === */
+@media (max-width: 768px) {
+  body { padding: 1rem; }
+
+  .dashboard { gap: 1rem; }
+
+  .full-width,
+  .half-width,
+  .quarter-width {
+    grid-column: span 12;
+  }
+
+  /* Stat cards: 2x2 grid */
+  .stat-cards-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
   .drift-grid { grid-template-columns: 1fr; }
+
   .chart-container { height: 250px; }
-  .episode { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+
+  .episode-header { flex-wrap: wrap; }
+
+  .velocity-label { min-width: 80px; font-size: 0.75rem; }
+
+  .source-row { flex-wrap: wrap; gap: 0.5rem; }
+  .source-name { min-width: unset; flex-basis: 100%; }
+}
+
+@media (max-width: 480px) {
+  .stat-cards-row {
+    grid-template-columns: 1fr;
+  }
+
+  .header h1 { font-size: 1.25rem; }
+
+  .tab-bar { flex-wrap: wrap; }
 }

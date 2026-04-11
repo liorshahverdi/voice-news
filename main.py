@@ -133,6 +133,8 @@ def main():
         topic_stats = insights.generate(
             story_archive, output_dir,
             history_days=insights_cfg.get("history_days", 90),
+            model=ollama_cfg.get("model", "llama3.2:3b"),
+            host=ollama_cfg.get("host", "http://localhost:11434"),
         )
         top_topics = list(topic_stats.get("topic_summary", {}).keys())[:5]
     else:
